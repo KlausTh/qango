@@ -9,13 +9,11 @@ use board::START;
 use board::Board;
 use player::Player;
 use std::collections::LinkedList;
-use std::rc::Rc;
 
-#[derive(Clone)]
 pub struct Game {
 	boards : LinkedList<Board>,
-	white : Rc<dyn Player>,
-	black : Rc<dyn Player>,
+	white : Box<dyn Player>,
+	black : Box<dyn Player>,
 }
 
 impl Game {
@@ -25,8 +23,8 @@ impl Game {
 		boards.push_back(START);
 		Game {
 			boards : boards,
-			white : Rc::from(white),
-			black : Rc::from(black),
+			white : white,
+			black : black,
 		}
 	}
 
@@ -34,22 +32,21 @@ impl Game {
 		self.boards.back().unwrap()
 	}
 
-	fn get_player(&self, side : Side) -> Rc<dyn Player> {
+	fn get_player(&self, side : Side) -> & dyn Player {
 		match side {
-			Side::WHITE => self.white.clone(),
-			Side::BLACK => self.black.clone(),
-			Side::NONE  => panic!("no more move is possible"),
+			Side::WHITE => self.white.as_ref(),
+			Side::BLACK => self.black.as_ref(),
+			Side::NONE  => panic!("where is no player at Side:NONE"),
 		}
 	}
 
 	pub fn step(&mut self) -> Side {
-		let clone = self.clone();
-		let board : Board = *clone.boards.back().unwrap();
+		let board : &Board = self.boards.back().unwrap();
 		let side = board.get_next();
 
 		if side != Side::NONE {
-			let player = clone.get_player(side);
-			let mov : usize = player.turn(&board);
+			let player = self.get_player(side);
+			let mov = player.turn(&board.clone());
 			let next_board : Board = board.turn(mov);
 
 			self.boards.push_back(next_board);

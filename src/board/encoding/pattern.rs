@@ -47,4 +47,10 @@ impl Pattern {
 
 		fac.into()
 	}
+
+	pub fn permutations128(&self) -> u128 {
+		let fac = FACULTY[self.get_sum()] / FACULTY[self.none] / FACULTY[self.white] / FACULTY[self.black];
+
+		fac.into()
+	}
 }

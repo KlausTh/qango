@@ -5,8 +5,7 @@ pub mod encoding;
 use board::side::{Side,Side::{NONE,WHITE,BLACK}};
 use std::fmt::{Display,Formatter};
 
-// Board Index
-
+// board index
 // 00 01 02 03 04 05
 // 06 07 08 09 10 11
 // 12 13 14 15 16 17
@@ -22,9 +21,9 @@ pub struct Board {
 pub const START : Board = Board { fields: [NONE; 36] };
 
 pub const WIN3 : [[usize; 3]; 12] = [
-	[00,01,06],[04,05,11],[24,30,31],[29,34,35],  // aussen
-	[02,07,12],[03,10,17],[18,25,32],[23,28,33],  // mitte
-	[08,13,14],[09,15,16],[19,20,26],[21,22,27]]; // innen
+	[00,01,06],[04,05,11],[24,30,31],[29,34,35],  // outer fields
+	[02,07,12],[03,10,17],[18,25,32],[23,28,33],  // middle fields
+	[08,13,14],[09,15,16],[19,20,26],[21,22,27]]; // inner fields
 
 pub const WIN4 : [[usize; 4]; 17] = [
 	[01,02,07,08],[02,03,08,09],[03,04,09,10],[06,07,12,13],[08,09,14,15],[10,11,16,17],
@@ -197,5 +196,25 @@ fn chr(e : &Side) -> char {
 		WHITE => 'o',
 		NONE => '.',
 		BLACK => 'x'
+	}
+}
+
+#[cfg(test)]
+mod test {
+	use super::*;
+
+	#[test]
+	fn test_check() {
+		let mut board = START;
+
+		board = board.turn(9); // white
+		board = board.turn(0);
+		board = board.turn(10); // white
+		board = board.turn(5);
+		board = board.turn(15); // white
+		board = board.turn(30);
+		board = board.turn(16); // white
+
+		assert!(board.check());
 	}
 }

@@ -86,7 +86,7 @@ pub fn permutations7x7() -> Vec<u128> {
 
 	for i in 0..ROUNDPATTERN7.len() {
 		let p = ROUNDPATTERN7[i];
-		result.push(p.permutations() as u128);
+		result.push(p.permutations128() as u128);
 	}
 
 	result
