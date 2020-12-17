@@ -2,16 +2,7 @@
 use board::Board;
 use board::side::Side;
 use player::Player;
-use std::collections::HashMap;
-
-static WEIGHTS : [u32;36] = [
-	4, 6, 6, 6, 6, 4,
-	6, 9, 9, 9, 9, 6,
-	6, 9,11,11, 9, 6,
-	6, 9,11,11, 9, 6,
-	6, 9, 9, 9, 9, 6,
-	4, 6, 6, 6, 6, 4
-];
+use super::evaluate::eval;
 
 #[derive(Clone)]
 pub struct Deep {
@@ -27,79 +18,41 @@ impl Deep {
 		}
 	}
 
-	fn next_turn(&self, visited : &mut HashMap<u64, Side>, board : &Board, deep : u8) -> Side {
-		// is it in the cache?
-		let num : u64 = Board::into(*board);
-		if visited.contains_key(&num) {
-			return *visited.get(&num).unwrap();
-		}
-
+	fn next_turn(&self, board : &Board, deep : u8) -> i32 {
 		// did I already won?
-		if board.won() != Side::NONE {
-			let won = board.won();
-
-			visited.insert(num, won);
-
-			return won;
+		match board.won() {
+			Side::WHITE => return eval(board),
+			Side::BLACK => return eval(board),
+			_ => (),
 		}
 
 		// no more calls please
 		if deep == self.level {
-			visited.insert(num, Side::NONE);
-
-			return Side::NONE
+			return eval(board);
 		}
 
 		// okay your turn
 		let turns = board.turns();
-		let you : Side = board.get_next();
-		let mut i_win : Side = !you;
+		let scores = turns.iter().map(|index| self.next_turn(&board.turn(*index),deep+1));
 
-		for t in turns.iter() {
-			let next_board = board.turn(*t);
-			let win_turn = self.next_turn(visited, &next_board, deep+1);
-
-			// if you win one turn -> you win
-			if win_turn == you {
-				visited.insert(num, you);
-
-				return you;
-			}
-
-			// if i win every turn -> i win
-			i_win = i_win & win_turn;
+		match board.get_next() {
+			Side::WHITE => scores.min().unwrap(),
+			Side::BLACK => scores.max().unwrap(),
+			_ => panic!("should not happend")
 		}
-		visited.insert(num, i_win);
-
-		return i_win;
 	}
 }
 
 impl Player for Deep {
 	fn turn(&self, board : &Board) -> usize {
-		let mut visited : HashMap<u64, Side> = HashMap::with_capacity(10000);
 		let turns = board.turns();
-		let me = board.get_next();
-		let mut turn : usize = turns[0];
-		let mut weight : u32 = 0;
+		let iter = turns.iter();
 
-		for t in turns.iter() {
-			let next_board = board.turn(*t);
-			let win = self.next_turn(&mut visited, &next_board, 0);
-
-			if win == me {
-				return *t;
-			}
-
-			if win == Side::NONE {
-				if weight < WEIGHTS[*t] {
-					turn = *t;
-					weight = WEIGHTS[*t];
-				}
-			}
+		match board.get_next() {
+			Side::WHITE => *iter.min_by_key(|index| self.next_turn(&board.turn(**index),0)).unwrap(),
+			Side::BLACK => *iter.max_by_key(|index| self.next_turn(&board.turn(**index),0)).unwrap(),
+			_ => board.turns()[0]
 		}
-
-		return turn;
 	}
 }
 
@@ -109,10 +62,32 @@ mod test {
 	use board::START;
 
 	#[test]
-	fn start_turn() {
+	fn turn_test_0() {
 		let player = Deep::new(Box::from("Deep0"),0);
 		let turn = player.turn(&START);
 
-		assert_eq!(turn, 14);
+		assert_eq!(turn, 14, "turn = {}", turn);
 	}
+
+	#[test]
+	fn turn_test_6093551267() {
+		let player = Deep::new(Box::from("Deep2"),2);
+		let board = Board::from(6093551267_u64);
+
+		let turn = player.turn(&board);
+
+		assert_eq!(turn, 23, "turn = {}", turn);
+	}
+
+	#[test]
+	fn turn_test_23877844226924() {
+		let player = Deep::new(Box::from("Deep1"),1);
+		let board = Board::from(23877844226924_u64);
+
+		let turn = player.turn(&board);
+
+		assert!(turn==5 || turn==30 || turn==28, "turn = {}", turn);
+	}
+
+	
 }

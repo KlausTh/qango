@@ -10,7 +10,7 @@ pub struct Random {
 
 impl Random {
 	pub fn new(name : Box<str>) -> Random {
-		Simple {
+		Random {
 			name : name,
 		}
 	}

@@ -2,6 +2,7 @@
 use std::fmt::Display;
 use std::fmt::Formatter;
 use std::fmt::Result;
+use std::default::Default;
 use std::ops::BitAnd;
 use std::ops::BitOr;
 use std::ops::BitOrAssign;
@@ -23,6 +24,12 @@ impl Display for Side {
 			Side::NONE => write!(f, "NONE"),
 			Side::BLACK => write!(f, "BLACK")
 		}
+	}
+}
+
+impl Default for Side {
+	fn default() -> Self {
+		Side::NONE
 	}
 }
 
@@ -74,6 +81,16 @@ impl BitOrAssign for Side {
 		match self {
 			Side::NONE => *self = rhs,
 			_ => {},
+		}
+	}
+}
+
+impl Into<f32> for Side {
+	fn into(self) -> f32 {
+		match self {
+			Side::WHITE => -1.0,
+			Side::NONE => 0.0,
+			Side::BLACK => 1.0
 		}
 	}
 }

@@ -59,6 +59,10 @@ impl Board {
 		}
 	}
 
+	pub fn get_element(&self, index : usize) -> Side {
+		self.fields[index]
+	}
+
 	pub fn get_elements(&self) -> [Side; 36] {
 		self.fields.clone()
 	}

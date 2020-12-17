@@ -1,6 +1,8 @@
 
 pub mod simple;
 pub mod deep;
+pub mod evaluate;
+pub mod random;
 
 use board::Board;
 
