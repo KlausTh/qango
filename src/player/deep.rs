@@ -6,39 +6,30 @@ use super::evaluate::eval;
 
 #[derive(Clone)]
 pub struct Deep {
-	name : Box<str>,
 	level : u8
 }
 
 impl Deep {
-	pub fn new(name : Box<str>, level : u8) -> Deep {
+	pub fn new(level : u8) -> Deep {
 		Deep {
-			name : name,
 			level : level
 		}
 	}
 
 	fn next_turn(&self, board : &Board, deep : u8) -> i32 {
-		// did I already won?
-		match board.won() {
-			Side::WHITE => return eval(board),
-			Side::BLACK => return eval(board),
-			_ => (),
-		}
-
-		// no more calls please
-		if deep == self.level {
+		// did I already won or enough calls?
+		if board.won() != Side::NONE || deep == self.level {
 			return eval(board);
 		}
 
-		// okay your turn
+		// okay go deeper
 		let turns = board.turns();
 		let scores = turns.iter().map(|index| self.next_turn(&board.turn(*index),deep+1));
 
-		match board.get_next() {
-			Side::WHITE => scores.min().unwrap(),
-			Side::BLACK => scores.max().unwrap(),
-			_ => panic!("should not happend")
+		if board.get_next() == Side::WHITE {
+			return scores.min().unwrap();
+		} else {
+			return scores.max().unwrap();
 		}
 	}
 }
@@ -63,7 +54,7 @@ mod test {
 
 	#[test]
 	fn turn_test_0() {
-		let player = Deep::new(Box::from("Deep0"),0);
+		let player = Deep::new(0);
 		let turn = player.turn(&START);
 
 		assert_eq!(turn, 14, "turn = {}", turn);
@@ -71,7 +62,7 @@ mod test {
 
 	#[test]
 	fn turn_test_6093551267() {
-		let player = Deep::new(Box::from("Deep2"),2);
+		let player = Deep::new(2);
 		let board = Board::from(6093551267_u64);
 
 		let turn = player.turn(&board);
@@ -81,13 +72,11 @@ mod test {
 
 	#[test]
 	fn turn_test_23877844226924() {
-		let player = Deep::new(Box::from("Deep1"),1);
+		let player = Deep::new(1);
 		let board = Board::from(23877844226924_u64);
 
 		let turn = player.turn(&board);
 
 		assert!(turn==5 || turn==30 || turn==28, "turn = {}", turn);
 	}
-
-	
 }

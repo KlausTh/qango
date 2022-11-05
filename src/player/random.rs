@@ -4,19 +4,11 @@ use player::Player;
 use ::rand::prelude::thread_rng;
 use ::rand::Rng;
 
-pub struct Random {
-	name : Box<str>
-}
+pub struct Random {}
 
 impl Random {
-	pub fn new(name : Box<str>) -> Random {
-		Random {
-			name : name,
-		}
-	}
-
-	pub fn get_name(&self) -> &str {
-		self.name.as_ref()
+	pub fn new() -> Random {
+		Random {}
 	}
 }
 
@@ -25,6 +17,6 @@ impl Player for Random {
 		let turns : &[usize] = Box::leak(board.turns());
 		let mut rng = thread_rng();
 
-		turns[rng.gen_range(0, turns.len())]
+		turns[rng.gen_range(0..turns.len())]
 	}
 }

@@ -13,15 +13,11 @@ static WEIGHTS : [u32;36] = [
 ];
 
 #[derive(Clone)]
-pub struct Simple {
-	name : Box<str>
-}
+pub struct Simple {}
 
 impl Simple {
-	pub fn new(name : Box<str>) -> Simple {
-		Simple {
-			name : name
-		}
+	pub fn new() -> Simple {
+		Simple {}
 	}
 }
 
@@ -57,7 +53,7 @@ mod test {
 
 	#[test]
 	fn start_turn() {
-		let player = Simple::new(Box::from("test Player"));
+		let player = Simple::new();
 		let turn = player.turn(&START);
 
 		assert!([14,15,20,21].binary_search(&turn).is_ok());

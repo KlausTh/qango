@@ -3,6 +3,16 @@ use std::ops::{Div, Mul};
 use std::cmp::PartialEq;
 use std::convert::Into;
 
+#[cfg_attr(all(target_arch="x86_64",target_feature="sse3"), withsse)]
+
+#[cfg(withsse)]
+use std::arch::x86_64::*;
+
+#[cfg_attr(all(target_arch="aarch64",target_feature="neon"), withneon)]
+
+#[cfg(withneon)]
+use std::arch::aarch64::*;
+
 const SIZE : usize = 16;
 const PRIM : [u32;SIZE] = [2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53];
 
@@ -62,6 +72,10 @@ pub const FACULTY : [Polynom;50] = [
 	Polynom {exp:[42,21,10, 6, 4, 3, 2, 2, 2, 1, 1, 1, 1, 1, 1, 0]},   //47! = 46! 47
 	Polynom {exp:[46,22,10, 6, 4, 3, 2, 2, 2, 1, 1, 1, 1, 1, 1, 0]},   //48! = 47! 2*2*2*2*3
 	Polynom {exp:[46,22,10, 8, 4, 3, 2, 2, 2, 1, 1, 1, 1, 1, 1, 0]}    //49! = 48! 7*7
+	//50! = 49! 2*5*5
+	//51! = 50! 3*17
+	//52! = 51! 2*2*13
+	//53! = 52! 53
 ];
 
 impl Into<u64> for Polynom {
@@ -130,12 +144,17 @@ impl Div for Polynom {
 	fn div(self, rhs: Self) -> Self {
 		let mut result = Polynom {exp:[0;SIZE]};
 
-		#[cfg(target_arch="x86_64")]
+		#[cfg(withsse)]
 		unsafe {
-			quick_div(&self.exp, &rhs.exp, &mut result.exp);
+			sse_div(&self.exp, &rhs.exp, &mut result.exp);
 		}
 
-		#[cfg(not(target_arch="x86_64"))]
+		#[cfg(withneon)]
+		unsafe {
+			neon_div(&self.exp, &rhs.exp, &mut result.exp);
+		}
+
+		#[cfg(not(any(withsse,withneon)))]
 		for i in 0..SIZE {
 			result.exp[i] = self.exp[i] - rhs.exp[i];
 		}
@@ -144,16 +163,25 @@ impl Div for Polynom {
 	}
 }
 
-#[cfg(target_arch="x86_64")]
+#[cfg(withsse)]
 #[inline]
-unsafe fn quick_div(exp1 : &[u8;SIZE], exp2 : &[u8;SIZE], result : &mut [u8;SIZE]) {
-	use std::arch::x86_64::*;
-
+unsafe fn sse_div(exp1 : &[u8;SIZE], exp2 : &[u8;SIZE], result : &mut [u8;SIZE]) {
 	let r1 = _mm_loadu_si128(exp1.as_ptr() as *const __m128i);
 	let r2 = _mm_loadu_si128(exp2.as_ptr() as *const __m128i);
 	let r3 = _mm_sub_epi8(r1, r2);
 
 	_mm_storeu_si128(result.as_ptr() as *mut __m128i, r3);
+}
+
+#[cfg(withneon)]
+#[inline]
+unsafe fn neon_div(exp1 : &[u8;SIZE], exp2 : &[u8;SIZE], result : &mut [u8;SIZE]) {
+	let r1 : uint8x16_t = vld1q_u8(exp1.as_ptr() as *const u8);
+	let r2 : uint8x16_t = vld1q_u8(exp2.as_ptr() as *const u8);
+	//let r3 : uint8x16_t = vsubq_u8(r1, r2);
+	let r3 : uint8x16_t = vsubq_u8(r2, r1);
+
+	vst1q_u8(result.as_ptr() as *mut _, r3);
 }
 
 impl Mul for Polynom {
@@ -162,12 +190,17 @@ impl Mul for Polynom {
 	fn mul(self, rhs: Self) -> Self {
 		let mut result = Polynom {exp:[0;SIZE]};
 
-		#[cfg(target_arch="x86_64")]
+		#[cfg(withsse)]
 		unsafe {
-			quick_mul(&self.exp, &rhs.exp, &mut result.exp);
+			sse_mul(&self.exp, &rhs.exp, &mut result.exp);
 		}
 
-		#[cfg(not(target_arch="x86_64"))]
+		#[cfg(withneon)]
+		unsafe {
+			neon_mul(&self.exp, &rhs.exp, &mut result.exp);
+		}
+
+		#[cfg(not(any(withsse,withneon)))]
 		for i in 0..SIZE {
 			result.exp[i] = self.exp[i] + rhs.exp[i];
 		}
@@ -176,16 +209,24 @@ impl Mul for Polynom {
 	}
 }
 
-#[cfg(target_arch="x86_64")]
+#[cfg(withsse)]
 #[inline]
-unsafe fn quick_mul(exp1 : &[u8;SIZE], exp2 : &[u8;SIZE], result : &mut[u8;SIZE]) {
-	use std::arch::x86_64::*;
-
+unsafe fn sse_mul(exp1 : &[u8;SIZE], exp2 : &[u8;SIZE], result : &mut[u8;SIZE]) {
 	let r1 = _mm_loadu_si128(exp1.as_ptr() as *const _);
 	let r2 = _mm_loadu_si128(exp2.as_ptr() as *const _);
 	let r3 = _mm_add_epi8(r1, r2);
 
 	_mm_storeu_si128(result.as_ptr() as *mut _, r3);
+}
+
+#[cfg(withneon)]
+#[inline]
+unsafe fn neon_mul(exp1 : &[u8;SIZE], exp2 : &[u8;SIZE], result : &mut[u8;SIZE]) {
+	let r1 : uint8x16_t = vld1q_u8(exp1.as_ptr() as *const u8);
+	let r2 : uint8x16_t = vld1q_u8(exp2.as_ptr() as *const u8);
+	let r3 : uint8x16_t = vaddq_u8(r1, r2);
+
+	vst1q_u8(result.as_ptr() as *mut _, r3);
 }
 
 impl PartialEq for Polynom {

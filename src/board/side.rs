@@ -8,7 +8,7 @@ use std::ops::BitOr;
 use std::ops::BitOrAssign;
 use std::ops::Not;
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Side { WHITE=-1, NONE=0, BLACK=1 }
 
 impl Side {
