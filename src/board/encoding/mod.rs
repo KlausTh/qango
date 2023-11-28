@@ -136,12 +136,12 @@ fn encode_rec_black(iter : &mut dyn Iterator<Item=&Side>, pattern : &Pattern) ->
 
 pub fn decode(code : u64) -> Result<Board, &'static str> {
 	match get_round(code) {
-		Ok(r) => {
+		Ok(round) => {
 			let mut field : [Side;36] = [NONE;36];
-			let pattern = create_pattern(r);
+			let pattern = create_pattern(round);
 
-			decode_rec(code - OFFSET[r], &pattern, &mut field);
-			Ok(Board{ fields : field })
+			decode_rec(code - OFFSET[round], &pattern, &mut field);
+			Ok(Board{ round : round, fields : field })
 		},
 		_     => Err("unkown position")
 	}

@@ -15,10 +15,11 @@ use std::fmt::{Display,Formatter};
 
 #[derive(Copy, Clone, Debug)]
 pub struct Board {
+	round : usize,
 	fields : [Side; 36],
 }
 
-pub const START : Board = Board { fields: [NONE; 36] };
+pub const START : Board = Board { round: 0, fields: [NONE; 36] };
 
 pub const WIN3 : [[usize; 3]; 12] = [
 	[00,01,06],[04,05,11],[24,30,31],[29,34,35],  // outer fields
@@ -49,9 +50,7 @@ impl Board {
 		if self.won() != NONE {
 			NONE
 		} else {
-			let nones = self.fields.iter().filter(|s| **s == Side::NONE).count();
-
-			if (nones % 2) == 0 {
+			if (self.round % 2) == 0 {
 				WHITE
 			} else {
 				BLACK
@@ -74,6 +73,7 @@ impl Board {
 			elements[position] = self.get_next();
 
 			Board {
+				round: self.round + 1,
 				fields: elements
 			}
 		} else {
@@ -96,7 +96,7 @@ impl Board {
 	}
 	
 	pub fn get_round(&self) -> usize {
-		self.fields.iter().filter(|e| !e.is_empty()).count()
+		self.round
 	}
 
 	pub fn won(&self) -> Side {
@@ -117,26 +117,6 @@ impl Board {
 		(w1+w2+w3) < 2  // Where can be only one!
 	}
 
-	/*
-	fn won3(&self) -> Side {
-		WIN3.iter()
-			.map(|i| self.fields[i[0]] & self.fields[i[1]] & self.fields[i[2]])
-			.fold(NONE, |r,s| r|s)
-	}
-
-	fn won4(&self) -> Side {
-		WIN4.iter()
-			.map(|i| self.fields[i[0]] & self.fields[i[1]] & self.fields[i[2]] & self.fields[i[3]])
-			.fold(NONE, |r,s| r|s)
-	}
-
-	fn won5(&self) -> Side {
-		WIN5.iter()
-			.map(|i| self.fields[i[0]] & self.fields[i[1]] & self.fields[i[2]] & self.fields[i[3]] & self.fields[i[4]])
-			.fold(NONE, |r,s| r|s)
-	}
-	*/
-
 	pub fn get_winning_fields(&self) -> Vec<usize> {
 		let mut result = Vec::<usize>::new();
 	
@@ -152,6 +132,13 @@ impl Board {
 		}
 
 		result
+	}
+
+	pub fn is_running(&self) -> bool {
+		self.round < 36
+		&& self.wins3().is_none() 
+		&& self.wins4().is_none()
+		&& self.wins5().is_none()
 	}
 
 	fn wins3(&self) -> Option<&[usize; 3]> {
@@ -176,9 +163,24 @@ impl Into<u64> for Board {
 	}
 }
 
+impl Into<u64> for &Board {
+	fn into(self) -> u64 {
+		encoding::encode(self)
+	}
+}
+
 impl From<u64> for Board {
 	fn from(c : u64) -> Self {
 		encoding::decode(c).unwrap()
+	}
+}
+
+impl Default for Board {
+	fn default() -> Board {
+		Board {
+			round : 0,
+			fields: [NONE; 36]
+		}
 	}
 }
 

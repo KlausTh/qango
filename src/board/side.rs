@@ -89,8 +89,28 @@ impl Into<f32> for Side {
 	fn into(self) -> f32 {
 		match self {
 			Side::WHITE => -1.0,
-			Side::NONE => 0.0,
-			Side::BLACK => 1.0
+			Side::NONE  =>  0.0,
+			Side::BLACK =>  1.0
+		}
+	}
+}
+
+impl Into<u8> for Side {
+	fn into(self) -> u8 {
+		match self {
+			Side::WHITE => 0xFF,
+			Side::BLACK => 0x01,
+			Side::NONE  => 0x00,
+		}
+	}
+}
+
+impl From<u8> for Side {
+	fn from(value : u8) -> Self {
+		match value {
+			0xFF => Side::WHITE,
+			0x01 => Side::BLACK,
+			_    => Side::NONE
 		}
 	}
 }
